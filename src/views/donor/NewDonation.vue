@@ -5,44 +5,44 @@
       
       <form @submit.prevent="handleSubmit" class="donation-form">
         <div class="form-section">
-          <h2>معلومات الجهاز</h2>
+          <h2>معلومات التبرع</h2>
           
           <div class="form-group">
-            <label for="deviceType">نوع الجهاز</label>
+            <label for="deviceType">نوع التبرع</label>
             <select id="deviceType" v-model="donation.deviceType" required>
-              <option value="">اختر نوع الجهاز</option>
-              <option value="diagnostic">أجهزة تشخيصية</option>
-              <option value="monitoring">أجهزة مراقبة</option>
-              <option value="treatment">أجهزة علاجية</option>
+              <option value="">اختر نوع التبرع</option>
+              <option value="diagnostic">ملابس</option>
+              <option value="monitoring">العاب</option>
+              <option value="treatment">كتب</option>
             </select>
           </div>
 
           <div class="form-group">
-            <label for="deviceName">اسم الجهاز</label>
+            <label for="deviceName">اسم التبرع</label>
             <input 
               type="text" 
               id="deviceName" 
               v-model="donation.deviceName" 
               required
-              placeholder="أدخل اسم الجهاز"
+              placeholder="أدخل اسم التبرع"
             >
           </div>
 
           <div class="form-group">
-            <label for="deviceDescription">وصف الجهاز</label>
+            <label for="deviceDescription">وصف التبرع</label>
             <textarea 
               id="deviceDescription" 
               v-model="donation.deviceDescription" 
               required
-              placeholder="أدخل وصفاً تفصيلياً للجهاز"
+              placeholder="أدخل وصفاً تفصيلياً للتبرع"
               rows="4"
             ></textarea>
           </div>
 
           <div class="form-group">
-            <label for="deviceCondition">حالة الجهاز</label>
+            <label for="deviceCondition">حالة التبرع</label>
             <select id="deviceCondition" v-model="donation.deviceCondition" required>
-              <option value="">اختر حالة الجهاز</option>
+              <option value="">اختر حالة التبرع</option>
               <option value="new">جديد</option>
               <option value="like_new">كالجديد</option>
               <option value="good">جيد</option>
@@ -75,13 +75,13 @@
           </div>
 
           <div class="form-group">
-            <label for="location">موقع الجهاز</label>
+            <label for="location">موقع التبرع</label>
             <input 
               type="text" 
               id="location" 
               v-model="donation.location" 
               required
-              placeholder="أدخل موقع الجهاز"
+              placeholder="أدخل موقع التبرع"
             >
           </div>
 
@@ -97,7 +97,7 @@
         </div>
 
         <div class="form-section">
-          <h2>صور الجهاز</h2>
+          <h2>صور التبرع</h2>
           <div class="image-upload">
             <div class="upload-area" @click="triggerFileInput" @dragover.prevent @drop.prevent="handleDrop">
               <i class="fas fa-cloud-upload-alt"></i>
