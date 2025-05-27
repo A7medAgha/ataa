@@ -1,84 +1,133 @@
 <template>
-  <div class="messages">
-    <div class="messages-container">
-      <h1>الرسائل</h1>
+  <div class="min-h-screen bg-gray-50">
+    <CommonHeader title="الرسائل" />
 
-      <div class="messages-layout">
-        <div class="conversations-list">
-          <div class="search-box">
-            <input 
-              type="text" 
-              v-model="searchQuery" 
-              placeholder="ابحث في المحادثات..."
-              @input="filterConversations"
-            >
-          </div>
-
-          <div class="conversations">
-            <div 
-              v-for="conversation in filteredConversations" 
-              :key="conversation.id"
-              class="conversation-item"
-              :class="{ active: selectedConversation?.id === conversation.id }"
-              @click="selectConversation(conversation)"
-            >
-              <div class="conversation-avatar">
-                <img :src="conversation.avatar" :alt="conversation.name">
-                <span 
-                  v-if="conversation.unreadCount" 
-                  class="unread-badge"
-                >
-                  {{ conversation.unreadCount }}
-                </span>
-              </div>
-              <div class="conversation-info">
-                <div class="conversation-header">
-                  <h3>{{ conversation.name }}</h3>
-                  <span class="conversation-time">{{ formatTime(conversation.lastMessageTime) }}</span>
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="bg-white rounded-lg shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-3 h-[calc(100vh-12rem)]">
+          <!-- Conversations List -->
+          <div class="border-l border-gray-200">
+            <div class="p-4 border-b border-gray-200">
+              <div class="relative">
+                <input
+                  type="text"
+                  v-model="searchQuery"
+                  placeholder="بحث في المحادثات..."
+                  class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                />
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
                 </div>
-                <p class="conversation-preview">{{ conversation.lastMessage }}</p>
+              </div>
+            </div>
+            <div class="overflow-y-auto h-[calc(100%-4rem)]">
+              <div
+                v-for="conversation in filteredConversations"
+                :key="conversation.id"
+                @click="selectConversation(conversation)"
+                :class="[
+                  'p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-50',
+                  { 'bg-primary-50': selectedConversation?.id === conversation.id }
+                ]"
+              >
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                  <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span class="text-primary-600 font-medium">{{ conversation.name.charAt(0) }}</span>
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-gray-900">{{ conversation.name }}</p>
+                      <p class="text-xs text-gray-500">{{ formatTime(conversation.lastMessageTime) }}</p>
+                    </div>
+                    <p class="text-sm text-gray-500 truncate">{{ conversation.lastMessage }}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div class="chat-area" v-if="selectedConversation">
-          <div class="chat-header">
-            <h2>{{ selectedConversation.name }}</h2>
-            <button class="info-button" @click="showConversationInfo">
-              <i class="fas fa-info-circle"></i>
-            </button>
-          </div>
+          <!-- Chat Area -->
+          <div class="md:col-span-2 flex flex-col">
+            <div v-if="selectedConversation" class="flex-1 flex flex-col">
+              <!-- Chat Header -->
+              <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                  <div class="flex-shrink-0">
+                    <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span class="text-primary-600 font-medium">{{ selectedConversation.name.charAt(0) }}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 class="text-sm font-medium text-gray-900">{{ selectedConversation.name }}</h3>
+                    <p class="text-xs text-gray-500">متصل الآن</p>
+                  </div>
+                </div>
+              </div>
 
-          <div class="messages-list" ref="messagesList">
-            <div 
-              v-for="message in selectedConversation.messages" 
-              :key="message.id"
-              class="message"
-              :class="{ 'message-sent': message.isSent }"
-            >
-              <div class="message-content">
-                <p>{{ message.text }}</p>
-                <span class="message-time">{{ formatTime(message.time) }}</span>
+              <!-- Messages -->
+              <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div
+                  v-for="message in selectedConversation.messages"
+                  :key="message.id"
+                  :class="[
+                    'flex',
+                    message.isFromMe ? 'justify-end' : 'justify-start'
+                  ]"
+                >
+                  <div
+                    :class="[
+                      'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
+                      message.isFromMe
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-gray-100 text-gray-900'
+                    ]"
+                  >
+                    <p class="text-sm">{{ message.text }}</p>
+                    <p class="text-xs mt-1" :class="message.isFromMe ? 'text-primary-200' : 'text-gray-500'">
+                      {{ formatTime(message.time) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Message Input -->
+              <div class="p-4 border-t border-gray-200">
+                <div class="flex space-x-3 rtl:space-x-reverse">
+                  <input
+                    type="text"
+                    v-model="newMessage"
+                    @keyup.enter="sendMessage"
+                    placeholder="اكتب رسالتك هنا..."
+                    class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                  />
+                  <button
+                    @click="sendMessage"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- No Conversation Selected -->
+            <div v-else class="flex-1 flex items-center justify-center">
+              <div class="text-center">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">لا توجد محادثة محددة</h3>
+                <p class="mt-1 text-sm text-gray-500">اختر محادثة من القائمة للبدء</p>
               </div>
             </div>
           </div>
-
-          <div class="message-input">
-            <textarea 
-              v-model="newMessage" 
-              placeholder="اكتب رسالتك هنا..."
-              @keydown.enter.prevent="sendMessage"
-            ></textarea>
-            <button class="send-button" @click="sendMessage">
-              <i class="fas fa-paper-plane"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="no-conversation" v-else>
-          <i class="fas fa-comments"></i>
-          <p>اختر محادثة للبدء</p>
         </div>
       </div>
     </div>
@@ -86,67 +135,68 @@
 </template>
 
 <script>
+import CommonHeader from '@/components/common/Header.vue'
+
 export default {
-  name: 'NGOMessagesPage',
+  name: 'Messages',
+  components: {
+    CommonHeader
+  },
   data() {
     return {
       searchQuery: '',
-      newMessage: '',
       selectedConversation: null,
+      newMessage: '',
       conversations: [
         {
           id: 1,
           name: 'أحمد محمد',
-          avatar: '/assets/avatars/donor1.jpg',
-          lastMessage: 'سأقوم بتوصيل الجهاز غداً',
-          lastMessageTime: '2024-03-15T10:30:00',
-          unreadCount: 2,
+          lastMessage: 'شكراً لكم على المساعدة',
+          lastMessageTime: '2024-02-20T10:30:00',
           messages: [
             {
               id: 1,
-              text: 'مرحباً، أنا أحمد محمد',
-              time: '2024-03-15T10:00:00',
-              isSent: false
+              text: 'مرحباً، أنا أحمد محمد من جمعية الرحمة',
+              time: '2024-02-20T10:00:00',
+              isFromMe: false
             },
             {
               id: 2,
-              text: 'لدي جهاز تخطيط قلب للتبرع به',
-              time: '2024-03-15T10:15:00',
-              isSent: false
+              text: 'مرحباً أحمد، كيف يمكنني مساعدتك؟',
+              time: '2024-02-20T10:15:00',
+              isFromMe: true
             },
             {
               id: 3,
-              text: 'سأقوم بتوصيل الجهاز غداً',
-              time: '2024-03-15T10:30:00',
-              isSent: false
+              text: 'شكراً لكم على المساعدة',
+              time: '2024-02-20T10:30:00',
+              isFromMe: false
             }
           ]
         },
         {
           id: 2,
-          name: 'محمد علي',
-          avatar: '/assets/avatars/donor2.jpg',
-          lastMessage: 'هل يمكنني زيارة الجمعية غداً؟',
-          lastMessageTime: '2024-03-14T15:45:00',
-          unreadCount: 0,
+          name: 'سارة أحمد',
+          lastMessage: 'هل يمكنني التبرع بملابس؟',
+          lastMessageTime: '2024-02-19T15:45:00',
           messages: [
             {
               id: 1,
-              text: 'مرحباً، أنا محمد علي',
-              time: '2024-03-14T15:00:00',
-              isSent: false
+              text: 'مرحباً، أنا سارة أحمد',
+              time: '2024-02-19T15:30:00',
+              isFromMe: false
             },
             {
               id: 2,
-              text: 'أود التبرع بجهاز قياس السكر',
-              time: '2024-03-14T15:30:00',
-              isSent: false
+              text: 'مرحباً سارة، كيف يمكنني مساعدتك؟',
+              time: '2024-02-19T15:35:00',
+              isFromMe: true
             },
             {
               id: 3,
-              text: 'هل يمكنني زيارة الجمعية غداً؟',
-              time: '2024-03-14T15:45:00',
-              isSent: false
+              text: 'هل يمكنني التبرع بملابس؟',
+              time: '2024-02-19T15:45:00',
+              isFromMe: false
             }
           ]
         }
@@ -155,331 +205,59 @@ export default {
   },
   computed: {
     filteredConversations() {
-      return this.conversations.filter(conversation => 
-        conversation.name.toLowerCase().includes(this.searchQuery.toLowerCase())
+      if (!this.searchQuery) return this.conversations
+      
+      const query = this.searchQuery.toLowerCase()
+      return this.conversations.filter(conversation =>
+        conversation.name.toLowerCase().includes(query) ||
+        conversation.lastMessage.toLowerCase().includes(query)
       )
     }
   },
   methods: {
-    filterConversations() {
-      // Additional filtering logic if needed
-    },
     selectConversation(conversation) {
       this.selectedConversation = conversation
-      conversation.unreadCount = 0
-      this.$nextTick(() => {
-        this.scrollToBottom()
-      })
     },
     sendMessage() {
-      if (!this.newMessage.trim()) return
+      if (!this.newMessage.trim() || !this.selectedConversation) return
 
       const message = {
         id: Date.now(),
         text: this.newMessage,
         time: new Date().toISOString(),
-        isSent: true
+        isFromMe: true
       }
 
       this.selectedConversation.messages.push(message)
       this.selectedConversation.lastMessage = this.newMessage
       this.selectedConversation.lastMessageTime = message.time
       this.newMessage = ''
-
-      this.$nextTick(() => {
-        this.scrollToBottom()
-      })
-    },
-    scrollToBottom() {
-      const messagesList = this.$refs.messagesList
-      if (messagesList) {
-        messagesList.scrollTop = messagesList.scrollHeight
-      }
     },
     formatTime(time) {
       const date = new Date(time)
       const now = new Date()
       const diff = now - date
 
+      // If less than 24 hours, show time
       if (diff < 24 * 60 * 60 * 1000) {
         return date.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })
-      } else if (diff < 7 * 24 * 60 * 60 * 1000) {
-        return date.toLocaleDateString('ar-SA', { weekday: 'long' })
-      } else {
-        return date.toLocaleDateString('ar-SA')
       }
-    },
-    showConversationInfo() {
-      // Implement conversation info modal
-      console.log('Showing conversation info')
+
+      // If less than 7 days, show day name
+      if (diff < 7 * 24 * 60 * 60 * 1000) {
+        return date.toLocaleDateString('ar-SA', { weekday: 'long' })
+      }
+
+      // Otherwise show full date
+      return date.toLocaleDateString('ar-SA')
     }
   }
 }
 </script>
 
 <style scoped>
-.messages {
-  direction: rtl;
-  min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 2rem;
-}
-
-.messages-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.messages-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 1rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  height: calc(100vh - 8rem);
-}
-
-.conversations-list {
-  border-left: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-}
-
-.search-box {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.conversations {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.conversation-item {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-  transition: background-color 0.2s;
-}
-
-.conversation-item:hover {
-  background-color: #f8f9fa;
-}
-
-.conversation-item.active {
-  background-color: #e3f2fd;
-}
-
-.conversation-avatar {
-  position: relative;
-  width: 50px;
-  height: 50px;
-}
-
-.conversation-avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.unread-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background-color: #4CAF50;
-  color: white;
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 10px;
-  min-width: 20px;
-  text-align: center;
-}
-
-.conversation-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.conversation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.25rem;
-}
-
-.conversation-header h3 {
-  margin: 0;
-  font-size: 1rem;
-  color: #333;
-}
-
-.conversation-time {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.conversation-preview {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.chat-area {
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.chat-header h2 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.info-button {
-  background: none;
-  border: none;
-  color: #666;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: 0.5rem;
-}
-
-.messages-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.message {
-  display: flex;
-  flex-direction: column;
-  max-width: 70%;
-}
-
-.message-sent {
-  align-self: flex-end;
-}
-
-.message-content {
-  background-color: #f1f0f0;
-  padding: 0.75rem 1rem;
-  border-radius: 1rem;
-  position: relative;
-}
-
-.message-sent .message-content {
-  background-color: #e3f2fd;
-}
-
-.message-content p {
-  margin: 0;
-  color: #333;
-}
-
-.message-time {
-  font-size: 0.75rem;
-  color: #666;
-  margin-top: 0.25rem;
-  display: block;
-}
-
-.message-input {
-  display: flex;
-  gap: 1rem;
-  padding: 1rem;
-  border-top: 1px solid #eee;
-}
-
-.message-input textarea {
-  flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  resize: none;
-  height: 40px;
-  font-family: inherit;
-}
-
-.send-button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  width: 40px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.send-button:hover {
-  background-color: #45a049;
-}
-
-.no-conversation {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: #666;
-}
-
-.no-conversation i {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.no-conversation p {
-  margin: 0;
-}
-
-h1 {
-  margin-bottom: 2rem;
-  color: #333;
-}
-
-@media (max-width: 768px) {
-  .messages-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .conversations-list {
-    display: none;
-  }
-
-  .conversations-list.active {
-    display: flex;
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    background: white;
-    z-index: 1;
-  }
+/* Custom styles for RTL support */
+[dir="rtl"] .rtl\:space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
 }
 </style> 
