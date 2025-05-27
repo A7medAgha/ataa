@@ -1,385 +1,290 @@
 <template>
-  <div class="received">
-    <div class="received-container">
-      <h1>التبرعات المستلمة</h1>
+  <div class="min-h-screen bg-gray-50">
+    <CommonHeader title="التبرعات المستلمة" />
 
-      <div class="filters">
-        <div class="search-box">
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="ابحث عن تبرع..."
-            @input="filterDonations"
-          >
-        </div>
-        <div class="filter-group">
-          <select v-model="statusFilter" @change="filterDonations">
-            <option value="">جميع الحالات</option>
-            <option value="in_transit">قيد النقل</option>
-            <option value="received">تم الاستلام</option>
-            <option value="in_use">قيد الاستخدام</option>
-            <option value="maintenance">قيد الصيانة</option>
-          </select>
-          <select v-model="typeFilter" @change="filterDonations">
-            <option value="">جميع الأنواع</option>
-            <option value="diagnostic">أجهزة تشخيصية</option>
-            <option value="monitoring">أجهزة مراقبة</option>
-            <option value="treatment">أجهزة علاجية</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="donations-list">
-        <div v-for="donation in filteredDonations" :key="donation.id" class="donation-card">
-          <div class="donation-image">
-            <img :src="donation.image" :alt="donation.deviceName">
-          </div>
-          <div class="donation-details">
-            <h3>{{ donation.deviceName }}</h3>
-            <p class="donation-type">{{ getTypeName(donation.type) }}</p>
-            <p class="donation-date">تاريخ الاستلام: {{ formatDate(donation.receivedDate) }}</p>
-            <p class="donation-status" :class="donation.status">
-              {{ getStatusText(donation.status) }}
-            </p>
-            <p class="donation-description">{{ donation.description }}</p>
-            <div class="donation-meta">
-              <p><strong>المتبرع:</strong> {{ donation.donorName }}</p>
-              <p><strong>موقع الجهاز:</strong> {{ donation.location }}</p>
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Filters -->
+      <div class="bg-white rounded-lg shadow-sm mb-6">
+        <div class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label for="search" class="block text-sm font-medium text-gray-700">بحث</label>
+              <input
+                type="text"
+                id="search"
+                v-model="filters.search"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+                placeholder="ابحث عن تبرع..."
+              />
+            </div>
+            <div>
+              <label for="type" class="block text-sm font-medium text-gray-700">نوع التبرع</label>
+              <select
+                id="type"
+                v-model="filters.type"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option value="">الكل</option>
+                <option value="clothes">ملابس</option>
+                <option value="furniture">أثاث</option>
+                <option value="electronics">إلكترونيات</option>
+                <option value="books">كتب</option>
+                <option value="toys">ألعاب</option>
+                <option value="other">أخرى</option>
+              </select>
+            </div>
+            <div>
+              <label for="status" class="block text-sm font-medium text-gray-700">الحالة</label>
+              <select
+                id="status"
+                v-model="filters.status"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option value="">الكل</option>
+                <option value="pending">قيد المراجعة</option>
+                <option value="accepted">تم القبول</option>
+                <option value="rejected">مرفوض</option>
+                <option value="completed">مكتمل</option>
+              </select>
+            </div>
+            <div>
+              <label for="sort" class="block text-sm font-medium text-gray-700">ترتيب حسب</label>
+              <select
+                id="sort"
+                v-model="filters.sort"
+                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+              >
+                <option value="newest">الأحدث</option>
+                <option value="oldest">الأقدم</option>
+                <option value="urgent">عاجل</option>
+              </select>
             </div>
           </div>
-          <div class="donation-actions">
-            <button 
-              class="action-button view"
-              @click="viewDonation(donation.id)"
-            >
-              عرض التفاصيل
-            </button>
-            <button 
-              v-if="donation.status === 'received'"
-              class="action-button update"
-              @click="updateStatus(donation.id)"
-            >
-              تحديث الحالة
-            </button>
-            <button 
-              v-if="donation.status === 'in_use'"
-              class="action-button maintenance"
-              @click="requestMaintenance(donation.id)"
-            >
-              طلب صيانة
-            </button>
-          </div>
         </div>
       </div>
 
-      <div v-if="filteredDonations.length === 0" class="no-donations">
-        <i class="fas fa-box-open"></i>
-        <p>لا توجد تبرعات مستلمة</p>
+      <!-- Donations List -->
+      <div class="bg-white rounded-lg shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  التبرع
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  النوع
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  الكمية
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  الحالة
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  المتبرع
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  التاريخ
+                </th>
+                <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  الإجراءات
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="donation in filteredDonations" :key="donation.id">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                      <img class="h-10 w-10 rounded-full object-cover" :src="donation.image" alt="" />
+                    </div>
+                    <div class="mr-4">
+                      <div class="text-sm font-medium text-gray-900">{{ donation.name }}</div>
+                      <div class="text-sm text-gray-500">{{ donation.description }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ getTypeName(donation.type) }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ donation.quantity }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span :class="[
+                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                    {
+                      'bg-warning-100 text-warning-800': donation.status === 'pending',
+                      'bg-success-100 text-success-800': donation.status === 'accepted',
+                      'bg-danger-100 text-danger-800': donation.status === 'rejected',
+                      'bg-primary-100 text-primary-800': donation.status === 'completed'
+                    }
+                  ]">
+                    {{ getStatusName(donation.status) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm text-gray-900">{{ donation.donor }}</div>
+                  <div class="text-sm text-gray-500">{{ donation.donorPhone }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ formatDate(donation.date) }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-left text-sm font-medium">
+                  <button
+                    @click="viewDetails(donation)"
+                    class="text-primary-600 hover:text-primary-900 ml-4"
+                  >
+                    التفاصيل
+                  </button>
+                  <button
+                    v-if="donation.status === 'pending'"
+                    @click="updateStatus(donation.id, 'accepted')"
+                    class="text-success-600 hover:text-success-900"
+                  >
+                    قبول
+                  </button>
+                  <button
+                    v-if="donation.status === 'pending'"
+                    @click="updateStatus(donation.id, 'rejected')"
+                    class="text-danger-600 hover:text-danger-900 mr-4"
+                  >
+                    رفض
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import CommonHeader from '@/components/common/Header.vue'
+
 export default {
-  name: 'ReceivedPage',
+  name: 'Received',
+  components: {
+    CommonHeader
+  },
   data() {
     return {
-      searchQuery: '',
-      statusFilter: '',
-      typeFilter: '',
+      filters: {
+        search: '',
+        type: '',
+        status: '',
+        sort: 'newest'
+      },
       donations: [
         {
           id: 1,
-          deviceName: 'جهاز تخطيط القلب',
-          type: 'diagnostic',
-          receivedDate: '2024-03-15',
-          status: 'in_use',
-          description: 'جهاز حديث لتشخيص أمراض القلب',
-          image: '/assets/devices/ecg.jpg',
-          donorName: 'أحمد محمد',
-          location: 'قسم القلب - الطابق الثاني'
+          name: 'ملابس شتوية',
+          description: '10 قطع ملابس شتوية - مقاس كبير',
+          type: 'clothes',
+          quantity: '10 قطع',
+          status: 'pending',
+          donor: 'أحمد محمد',
+          donorPhone: '0123456789',
+          date: '2024-02-20',
+          image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
         },
         {
           id: 2,
-          deviceName: 'جهاز قياس السكر',
-          type: 'monitoring',
-          receivedDate: '2024-03-14',
-          status: 'received',
-          description: 'جهاز لقياس مستوى السكر في الدم',
-          image: '/assets/devices/glucometer.jpg',
-          donorName: 'محمد علي',
-          location: 'مستودع الأجهزة'
-        },
-        {
-          id: 3,
-          deviceName: 'جهاز التنفس الصناعي',
-          type: 'treatment',
-          receivedDate: '2024-03-13',
-          status: 'maintenance',
-          description: 'جهاز للتنفس الصناعي للمرضى',
-          image: '/assets/devices/ventilator.jpg',
-          donorName: 'سارة أحمد',
-          location: 'ورشة الصيانة'
+          name: 'أدوات منزلية',
+          description: 'أدوات مطبخ - حالة جيدة',
+          type: 'furniture',
+          quantity: '5 قطع',
+          status: 'accepted',
+          donor: 'سارة أحمد',
+          donorPhone: '0123456788',
+          date: '2024-02-19',
+          image: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'
         }
       ]
     }
   },
   computed: {
     filteredDonations() {
-      return this.donations.filter(donation => {
-        const matchesSearch = donation.deviceName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                            donation.description.toLowerCase().includes(this.searchQuery.toLowerCase())
-        const matchesStatus = !this.statusFilter || donation.status === this.statusFilter
-        const matchesType = !this.typeFilter || donation.type === this.typeFilter
-        return matchesSearch && matchesStatus && matchesType
+      let result = [...this.donations]
+
+      // Apply search filter
+      if (this.filters.search) {
+        const search = this.filters.search.toLowerCase()
+        result = result.filter(donation => 
+          donation.name.toLowerCase().includes(search) ||
+          donation.description.toLowerCase().includes(search) ||
+          donation.donor.toLowerCase().includes(search)
+        )
+      }
+
+      // Apply type filter
+      if (this.filters.type) {
+        result = result.filter(donation => donation.type === this.filters.type)
+      }
+
+      // Apply status filter
+      if (this.filters.status) {
+        result = result.filter(donation => donation.status === this.filters.status)
+      }
+
+      // Apply sorting
+      result.sort((a, b) => {
+        if (this.filters.sort === 'newest') {
+          return new Date(b.date) - new Date(a.date)
+        } else if (this.filters.sort === 'oldest') {
+          return new Date(a.date) - new Date(b.date)
+        }
+        return 0
       })
+
+      return result
     }
   },
   methods: {
-    filterDonations() {
-      // Additional filtering logic if needed
-    },
     getTypeName(type) {
       const types = {
-        diagnostic: 'أجهزة تشخيصية',
-        monitoring: 'أجهزة مراقبة',
-        treatment: 'أجهزة علاجية'
+        clothes: 'ملابس',
+        furniture: 'أثاث',
+        electronics: 'إلكترونيات',
+        books: 'كتب',
+        toys: 'ألعاب',
+        other: 'أخرى'
       }
       return types[type] || type
     },
-    getStatusText(status) {
+    getStatusName(status) {
       const statuses = {
-        in_transit: 'قيد النقل',
-        received: 'تم الاستلام',
-        in_use: 'قيد الاستخدام',
-        maintenance: 'قيد الصيانة'
+        pending: 'قيد المراجعة',
+        accepted: 'تم القبول',
+        rejected: 'مرفوض',
+        completed: 'مكتمل'
       }
       return statuses[status] || status
     },
     formatDate(date) {
       return new Date(date).toLocaleDateString('ar-SA')
     },
-    viewDonation(id) {
-      // Implement view donation details logic
-      console.log('Viewing donation:', id)
+    viewDetails(donation) {
+      // Implement view details functionality
+      console.log('View details for donation:', donation)
     },
-    updateStatus(id) {
-      // Implement status update logic
-      console.log('Updating status for donation:', id)
-    },
-    requestMaintenance(id) {
-      // Implement maintenance request logic
-      console.log('Requesting maintenance for donation:', id)
+    updateStatus(donationId, newStatus) {
+      const donation = this.donations.find(d => d.id === donationId)
+      if (donation) {
+        donation.status = newStatus
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-.received {
-  direction: rtl;
-  min-height: 100vh;
-  background-color: #f5f5f5;
-  padding: 2rem;
-}
-
-.received-container {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.filters {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-}
-
-.search-box {
-  flex: 1;
-  min-width: 300px;
-}
-
-.filter-group {
-  display: flex;
-  gap: 1rem;
-}
-
-.search-box input,
-.filter-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.donations-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.donation-card {
-  display: grid;
-  grid-template-columns: 200px 1fr auto;
-  gap: 1.5rem;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.donation-image img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.donation-details h3 {
-  margin: 0 0 0.5rem 0;
-  color: #333;
-}
-
-.donation-type {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.donation-date {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.donation-status {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
-}
-
-.donation-status.in_transit {
-  background-color: #fff3e0;
-  color: #ef6c00;
-}
-
-.donation-status.received {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-
-.donation-status.in_use {
-  background-color: #e3f2fd;
-  color: #1565c0;
-}
-
-.donation-status.maintenance {
-  background-color: #fce4ec;
-  color: #c2185b;
-}
-
-.donation-description {
-  color: #666;
-  margin: 0 0 1rem 0;
-  line-height: 1.4;
-}
-
-.donation-meta {
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 4px;
-}
-
-.donation-meta p {
-  margin: 0.25rem 0;
-  color: #666;
-}
-
-.donation-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.action-button {
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  border: none;
-  white-space: nowrap;
-}
-
-.action-button.view {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.action-button.update {
-  background-color: #2196F3;
-  color: white;
-}
-
-.action-button.maintenance {
-  background-color: #9C27B0;
-  color: white;
-}
-
-.action-button.view:hover {
-  background-color: #45a049;
-}
-
-.action-button.update:hover {
-  background-color: #1976D2;
-}
-
-.action-button.maintenance:hover {
-  background-color: #7B1FA2;
-}
-
-.no-donations {
-  text-align: center;
-  padding: 3rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.no-donations i {
-  font-size: 3rem;
-  color: #ddd;
-  margin-bottom: 1rem;
-}
-
-.no-donations p {
-  color: #666;
-  margin: 0;
-}
-
-h1 {
-  margin-bottom: 2rem;
-  color: #333;
-}
-
-@media (max-width: 768px) {
-  .donation-card {
-    grid-template-columns: 1fr;
-  }
-
-  .donation-image {
-    max-width: 300px;
-    margin: 0 auto;
-  }
-
-  .donation-actions {
-    flex-direction: row;
-    justify-content: flex-start;
-  }
+/* Custom styles for RTL support */
+[dir="rtl"] .rtl\:space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
 }
 </style> 
